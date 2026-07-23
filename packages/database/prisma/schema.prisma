@@ -1,0 +1,392 @@
+// ===========================
+// Prisma Schema - QuizAI Platform
+// ===========================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USERS ====================
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  passwordHash     String?
+  googleId         String?  @unique
+  name             String
+  role             Role
+  department       String?
+  enrollmentNumber String?  // Students
+  employeeId       String?  // Teachers
+  profileImage     String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  teacherClasses   Class[]           @relation("TeacherClasses")
+  enrollments      ClassEnrollment[]
+  attempts         StudentAttempt[]
+  questionBank     QuestionBankItem[]
+  activities       Activity[]
+
+  @@index([email])
+  @@index([role])
+}
+
+// ==================== ACADEMICS ====================
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subjects Subject[]
+}
+
+model Subject {
+  id           String   @id @default(cuid())
+  name         String
+  code         String   @unique
+  departmentId String
+  semester     Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  classes    Class[]
+
+  @@index([departmentId])
+}
+
+model Class {
+  id           String   @id @default(cuid())
+  name         String
+  subjectId    String
+  teacherId    String
+  joinCode     String   @unique
+  academicYear String
+  section      String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subject     Subject           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher     User              @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
+  enrollments ClassEnrollment[]
+  quizzes     Quiz[]
+
+  @@index([teacherId])
+  @@index([subjectId])
+  @@index([joinCode])
+}
+
+model ClassEnrollment {
+  id         String   @id @default(cuid())
+  classId    String
+  studentId  String
+  enrolledAt DateTime @default(now())
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, studentId])
+  @@index([studentId])
+}
+
+// ==================== QUIZZES ====================
+
+enum QuizMode {
+  PRACTICE
+  TIMED
+  ASSIGNMENT
+  LIVE
+}
+
+enum QuizStatus {
+  DRAFT
+  PUBLISHED
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+model Quiz {
+  id               String     @id @default(cuid())
+  classId          String
+  title            String
+  description      String?
+  mode             QuizMode
+  status           QuizStatus @default(DRAFT)
+  startTime        DateTime?
+  endTime          DateTime?
+  duration         Int?       // minutes
+  totalMarks       Int        @default(0)
+  passingMarks     Int?
+  shuffleQuestions Boolean    @default(false)
+  shuffleOptions   Boolean    @default(false)
+  showResults      Boolean    @default(true)
+  showAnswers      Boolean    @default(false)
+  maxAttempts      Int        @default(1)
+  roomCode         String?    @unique // LIVE mode
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  class     Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  questions Question[]
+  attempts  StudentAttempt[]
+  analytics QuizAnalytics?
+
+  @@index([classId])
+  @@index([status])
+  @@index([roomCode])
+}
+
+// ==================== QUESTIONS ====================
+
+enum QuestionType {
+  MCQ
+  TRUE_FALSE
+  FILL_BLANK
+  MATCH
+  NUMERICAL
+  DESCRIPTIVE
+  CODING
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum BloomLevel {
+  REMEMBER
+  UNDERSTAND
+  APPLY
+  ANALYZE
+  EVALUATE
+  CREATE
+}
+
+enum DescriptiveGradingMode {
+  MANUAL
+  AI_WITH_KEY
+  AI_WITHOUT_KEY
+}
+
+model Question {
+  id           String              @id @default(cuid())
+  quizId       String
+  type         QuestionType
+  questionText String
+  marks        Int
+  difficulty   DifficultyLevel?
+  bloomLevel   BloomLevel?
+  explanation  String?
+  imageUrl     String?
+  order        Int                 @default(0)
+
+  // NUMERICAL fields
+  correctNumber Float?
+  tolerance     Float?
+
+  // DESCRIPTIVE fields
+  idealAnswer  String?
+  gradingMode  DescriptiveGradingMode?
+
+  // CODING fields
+  starterCode String?
+  language    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quiz            Quiz             @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options         Option[]
+  acceptedAnswers AcceptedAnswer[]
+  matchPairs      MatchPair[]
+  testCases       TestCase[]
+  studentAnswers  StudentAnswer[]
+
+  @@index([quizId])
+  @@index([type])
+}
+
+model Option {
+  id         String  @id @default(cuid())
+  questionId String
+  text       String
+  isCorrect  Boolean @default(false)
+  order      Int     @default(0)
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model AcceptedAnswer {
+  id         String @id @default(cuid())
+  questionId String
+  answer     String
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model MatchPair {
+  id         String @id @default(cuid())
+  questionId String
+  leftItem   String
+  rightItem  String
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model TestCase {
+  id             String  @id @default(cuid())
+  questionId     String
+  input          String
+  expectedOutput String
+  isHidden       Boolean @default(false)
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+// ==================== ATTEMPTS & ANSWERS ====================
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
+  TIMED_OUT
+}
+
+model StudentAttempt {
+  id         String        @id @default(cuid())
+  studentId  String
+  quizId     String
+  status     AttemptStatus @default(IN_PROGRESS)
+  score      Float?
+  totalMarks Int
+  startedAt  DateTime      @default(now())
+  submittedAt DateTime?
+  timeTaken  Int?          // seconds
+
+  student User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  quiz    Quiz            @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers StudentAnswer[]
+
+  @@index([studentId])
+  @@index([quizId])
+  @@index([status])
+}
+
+model StudentAnswer {
+  id              String  @id @default(cuid())
+  attemptId       String
+  questionId      String
+  answer          String  // JSON for complex types (match pairs, etc.)
+  isCorrect       Boolean?
+  aiScore         Float?
+  teacherScore    Float?
+  finalScore      Float   @default(0)
+  aiReasoning     String? // AI explanation
+  teacherFeedback String?
+  gradedAt        DateTime?
+
+  attempt  StudentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@index([questionId])
+}
+
+// ==================== QUESTION BANK ====================
+
+model QuestionBankItem {
+  id           String   @id @default(cuid())
+  teacherId    String
+  subject      String
+  topic        String
+  type         QuestionType
+  questionText String
+  questionData Json     // Full question data as JSON
+  tags         String[]
+  difficulty   DifficultyLevel?
+  bloomLevel   BloomLevel?
+  usageCount   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  teacher User @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId])
+  @@index([subject])
+  @@index([topic])
+}
+
+// ==================== ANALYTICS ====================
+
+model QuizAnalytics {
+  id              String   @id @default(cuid())
+  quizId          String   @unique
+  totalStudents   Int      @default(0)
+  attemptCount    Int      @default(0)
+  averageScore    Float    @default(0)
+  highestScore    Float    @default(0)
+  lowestScore     Float    @default(0)
+  medianScore     Float    @default(0)
+  passPercentage  Float    @default(0)
+  averageTimeTaken Int     @default(0) // seconds
+  questionStats   Json?    // Per-question analytics as JSON
+  computedAt      DateTime @default(now())
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+// ==================== ACTIVITY LOG ====================
+
+model Activity {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  description String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ==================== AI CONFIGURATION ====================
+
+model AIConfig {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  value         String
+  description   String?
+  updatedAt     DateTime @updatedAt
+}

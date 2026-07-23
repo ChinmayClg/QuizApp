@@ -1,0 +1,26 @@
+{
+  "name": "quizai-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-Powered Quiz & Assessment Platform",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "db:generate": "pnpm --filter @quizai/database generate",
+    "db:migrate": "pnpm --filter @quizai/database migrate:dev",
+    "db:push": "pnpm --filter @quizai/database db:push",
+    "db:seed": "pnpm --filter @quizai/database seed",
+    "db:studio": "pnpm --filter @quizai/database studio",
+    "clean": "turbo run clean && rimraf node_modules"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0",
+    "rimraf": "^6.0.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
