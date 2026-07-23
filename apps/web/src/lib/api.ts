@@ -2,7 +2,7 @@
 // API Client - Fetch wrapper with JWT
 // ===========================
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 class ApiClient {
   private token: string | null = null;
