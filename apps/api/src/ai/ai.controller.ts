@@ -97,6 +97,18 @@ export class AiController {
       
       return { success: true, data: questions };
     } catch (err: any) {
+      console.warn(`[UPLOAD DEBUG] Local extraction failed: ${err.message}. Trying native Gemini PDF parsing...`);
+      
+      // If local extraction fails, and it's a PDF, fall back to native Gemini parsing!
+      if (file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf')) {
+        try {
+          const questions = await this.aiService.generateQuestionsFromNativePDF(file, extractStrictly);
+          return { success: true, data: questions };
+        } catch (nativeErr: any) {
+          throw new BadRequestException(nativeErr.message || 'Failed to process document natively');
+        }
+      }
+      
       throw new BadRequestException(err.message || 'Failed to process document');
     }
   }
