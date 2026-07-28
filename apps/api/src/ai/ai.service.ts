@@ -393,6 +393,77 @@ For each question, output this exact JSON structure in a JSON array. Return ONLY
     }
   }
 
+  // ========== GENERATE QUESTIONS FROM NATIVE PDF (GEMINI VISION) ==========
+
+  async generateQuestionsFromNativePDF(file: Express.Multer.File, extractStrictly: boolean): Promise<any[]> {
+    if (!this.model) {
+      return this.mockGenerateQuestions({ topic: 'Native PDF Mock', count: 3, types: ['MCQ', 'TRUE_FALSE'] });
+    }
+
+    try {
+      const strictPrompt = `You are an intelligent document parser. I am providing you with a PDF document that ALREADY contains quiz/test questions.
+Your job is to read this document, identify all the questions, their options, and the correct answers (if present), and structure them into our specific JSON format. Do NOT invent new questions.`;
+
+      const inventPrompt = `You are an expert educational AI. I am providing you with a PDF reading material, notes, or a syllabus.
+Your job is to thoroughly read this material and INVENT high-quality quiz questions that test the user's understanding of the key concepts found within the text.`;
+
+      const prompt = `
+${extractStrictly ? strictPrompt : inventPrompt}
+
+For each question, output this exact JSON structure in a JSON array. Return ONLY the JSON array, no markdown formatting or other text.
+[
+  {
+    "type": "MCQ" | "TRUE_FALSE" | "FILL_BLANK" | "NUMERICAL" | "DESCRIPTIVE",
+    "questionText": "The question text",
+    "marks": 1,
+    "options": [{"text": "option A", "isCorrect": true}, {"text": "option B", "isCorrect": false}],
+    "acceptedAnswers": ["answer 1", "answer 2"],
+    "idealAnswer": "Ideal descriptive answer"
+  }
+]
+`;
+
+      const pdfPart = {
+        inlineData: {
+          data: file.buffer.toString('base64'),
+          mimeType: 'application/pdf'
+        }
+      };
+
+      const maxRetries = 3;
+      let lastError: any;
+
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const modelToUse = attempt === 0 ? this.model : this.fallbackModel;
+          if (attempt > 0) this.logger.log('🔄 Switching to fallback Gemini model for native PDF...');
+          
+          const result = await modelToUse.generateContent([prompt, pdfPart]);
+          const resultText = result.response.text();
+          
+          const jsonMatch = resultText.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+          }
+          throw new Error('Could not parse AI response');
+        } catch (error: any) {
+          lastError = error;
+          if (error.status === 429 && attempt < maxRetries - 1) {
+            const waitSeconds = Math.pow(2, attempt + 1) * 10;
+            this.logger.warn(`Rate limited. Retrying native PDF in ${waitSeconds}s...`);
+            await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+            continue;
+          }
+          break;
+        }
+      }
+      throw lastError || new Error('All retry attempts failed');
+    } catch (error: any) {
+      this.logger.error('Gemini native PDF parsing error:', error);
+      throw new Error(`Failed to parse native PDF: ${error.message}`);
+    }
+  }
+
   // ========== MOCK RESPONSES ==========
 
   private mockGradeDescriptive(params: { maxMarks: number; studentAnswer: string }) {
