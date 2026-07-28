@@ -78,6 +78,14 @@ export class AiController {
     if (!file) {
       throw new BadRequestException('File is required');
     }
+
+    console.log(`[UPLOAD DEBUG] Received file: ${file.originalname}`);
+    console.log(`[UPLOAD DEBUG] Mime: ${file.mimetype}`);
+    console.log(`[UPLOAD DEBUG] Size: ${file.size} bytes`);
+    console.log(`[UPLOAD DEBUG] Buffer length: ${file.buffer?.length}`);
+    console.log(`[UPLOAD DEBUG] First 50 bytes:`, file.buffer?.toString('utf8', 0, 50));
+    console.log(`[UPLOAD DEBUG] Hex of first 10 bytes:`, file.buffer?.toString('hex', 0, 10));
+
     const extractStrictly = dto.extractStrictly === 'true' || dto.extractStrictly === true;
     
     try {
