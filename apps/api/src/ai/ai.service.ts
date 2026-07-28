@@ -5,7 +5,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-const pdfParse = require('pdf-parse');
+const PDFParser = require('pdf2json');
 import * as mammoth from 'mammoth';
 
 @Injectable()
@@ -284,8 +284,19 @@ Provide a 3-4 sentence summary highlighting:
       const extension = file.originalname.split('.').pop()?.toLowerCase();
 
       if (mimeType === 'application/pdf' || extension === 'pdf') {
-        const data = await pdfParse(file.buffer);
-        return data.text;
+        return new Promise<string>((resolve, reject) => {
+          const pdfParser = new PDFParser(this, 1);
+          pdfParser.on('pdfParser_dataError', (errData: any) => reject(new Error(errData.parserError)));
+          pdfParser.on('pdfParser_dataReady', () => {
+            // pdf2json returns text with a lot of URL-encoded characters (like %20, %2C), decode it:
+            try {
+              resolve(decodeURIComponent(pdfParser.getRawTextContent()));
+            } catch (e) {
+              resolve(pdfParser.getRawTextContent());
+            }
+          });
+          pdfParser.parseBuffer(file.buffer);
+        });
       } else if (
         mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
         extension === 'docx'
