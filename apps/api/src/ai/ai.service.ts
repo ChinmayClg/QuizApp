@@ -448,9 +448,10 @@ For each question, output this exact JSON structure in a JSON array. Return ONLY
           throw new Error('Could not parse AI response');
         } catch (error: any) {
           lastError = error;
-          if (error.status === 429 && attempt < maxRetries - 1) {
-            const waitSeconds = Math.pow(2, attempt + 1) * 10;
-            this.logger.warn(`Rate limited. Retrying native PDF in ${waitSeconds}s...`);
+          const is503 = error?.status === 503 || error?.message?.includes('503');
+          if ((error.status === 429 || is503) && attempt < maxRetries - 1) {
+            const waitSeconds = Math.pow(2, attempt + 1) * 2; // wait 4s, 8s
+            this.logger.warn(`⏳ Gemini model overloaded (${error.status || 503}). Retrying native PDF in ${waitSeconds}s...`);
             await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
             continue;
           }
