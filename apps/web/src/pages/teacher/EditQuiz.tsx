@@ -276,6 +276,13 @@ export default function EditQuiz() {
     setIsLoading(true);
     try {
       const payload: any = { ...quizData };
+      
+      // Remove classId as it cannot be updated
+      delete payload.classId;
+      delete payload.id;
+      delete payload.createdAt;
+      delete payload.updatedAt;
+
       if (!payload.startTime) delete payload.startTime;
       else payload.startTime = new Date(payload.startTime).toISOString();
       
