@@ -179,9 +179,23 @@ export default function QuizDetail() {
             {quiz.questions?.map((q: any, i: number) => (
               <div key={q.id} className="card-glass" style={{ padding: 'var(--space-4)', marginBottom: 'var(--space-3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                  <div>
+                  <div style={{ flex: 1 }}>
                     <span className="badge badge-primary" style={{ marginBottom: 'var(--space-2)' }}>{q.type}</span>
                     <p style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)' }}>Q{i + 1}. {q.questionText}</p>
+                    {q.imageUrl && (
+                      <img
+                        src={q.imageUrl}
+                        alt="Question"
+                        style={{
+                          maxWidth: 200,
+                          maxHeight: 120,
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid var(--border-primary)',
+                          objectFit: 'contain',
+                          marginTop: 'var(--space-2)',
+                        }}
+                      />
+                    )}
                   </div>
                   <span className="badge badge-info">{q.marks} marks</span>
                 </div>

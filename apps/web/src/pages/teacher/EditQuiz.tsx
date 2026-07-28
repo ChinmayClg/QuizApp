@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../lib/api';
-import { ArrowRight, ArrowLeft, BookOpen, Clock, Settings, Save, PlusCircle, Trash2, Upload, FileText, Sparkles, Library, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowRight, ArrowLeft, BookOpen, Clock, Settings, Save, PlusCircle, Trash2, Upload, FileText, Sparkles, Library, ChevronDown, ChevronRight, ImagePlus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { QuestionType } from '@quizai/shared';
 
@@ -13,6 +13,7 @@ interface QuestionDraft {
   type: QuestionType;
   questionText: string;
   marks: number;
+  imageUrl?: string;
   options: { text: string; isCorrect: boolean }[];
   acceptedAnswers: string[];
   matchPairs: { leftItem: string; rightItem: string }[];
@@ -27,6 +28,7 @@ const emptyQuestion = (): QuestionDraft => ({
   type: QuestionType.MCQ,
   questionText: '',
   marks: 1,
+  imageUrl: undefined,
   options: [
     { text: '', isCorrect: true },
     { text: '', isCorrect: false },
@@ -308,6 +310,7 @@ export default function EditQuiz() {
           questionText: q.questionText,
           marks: Number(q.marks) || 1,
           explanation: q.explanation || undefined,
+          imageUrl: (q as any).imageUrl || undefined,
           order: i,
         };
 
@@ -524,6 +527,68 @@ export default function EditQuiz() {
             <div className="form-group">
               <label className="label">Question Text *</label>
               <textarea className="input textarea" placeholder="Enter your question..." value={q.questionText} onChange={(e) => updateQuestion(activeQ, 'questionText', e.target.value)} />
+            </div>
+
+            {/* Question Image Upload */}
+            <div className="form-group">
+              <label className="label">Question Image (optional)</label>
+              {q.imageUrl ? (
+                <div style={{ position: 'relative', display: 'inline-block', marginTop: 'var(--space-2)' }}>
+                  <img
+                    src={q.imageUrl}
+                    alt="Question"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: 250,
+                      borderRadius: 'var(--radius-lg)',
+                      border: '1px solid var(--border-primary)',
+                      objectFit: 'contain',
+                    }}
+                  />
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => updateQuestion(activeQ, 'imageUrl', undefined)}
+                    style={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      padding: '4px 6px',
+                      borderRadius: 'var(--radius-full)',
+                      minWidth: 'unset',
+                    }}
+                    title="Remove image"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <label
+                  className="btn btn-secondary btn-sm"
+                  style={{ cursor: 'pointer', display: 'inline-flex', marginTop: 'var(--space-2)' }}
+                >
+                  <ImagePlus size={16} /> Upload Image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      try {
+                        toast.loading('Uploading image...', { id: 'img-upload' });
+                        const res = await api.post<any>('/upload/image', formData);
+                        updateQuestion(activeQ, 'imageUrl', res.url);
+                        toast.success('Image uploaded!', { id: 'img-upload' });
+                      } catch (err: any) {
+                        toast.error(err.message || 'Image upload failed', { id: 'img-upload' });
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              )}
             </div>
 
             {/* MCQ Options */}

@@ -55,7 +55,13 @@ export default function TakeQuiz() {
       }
 
       if (quizRes.data.duration) {
-        setTimeLeft(quizRes.data.duration * 60);
+        const durationSeconds = quizRes.data.duration * 60;
+        const startedAt = new Date(attemptRes.data.startedAt).getTime();
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - startedAt) / 1000);
+        const remainingSeconds = durationSeconds - elapsedSeconds;
+        
+        setTimeLeft(Math.max(0, remainingSeconds));
       }
     } catch (error: any) {
       toast.error(error.message || 'Cannot start quiz');
@@ -124,9 +130,26 @@ export default function TakeQuiz() {
             <span className="badge badge-info">{question.marks} marks • {question.type}</span>
           </div>
 
-          <h3 style={{ fontSize: 'var(--font-size-lg)', marginBottom: 'var(--space-6)', lineHeight: 'var(--line-height-relaxed)' }}>
+          <h3 style={{ fontSize: 'var(--font-size-lg)', marginBottom: 'var(--space-4)', lineHeight: 'var(--line-height-relaxed)' }}>
             {question.questionText}
           </h3>
+
+          {/* Question Image */}
+          {question.imageUrl && (
+            <div style={{ marginBottom: 'var(--space-6)', textAlign: 'center' }}>
+              <img
+                src={question.imageUrl}
+                alt="Question diagram"
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: 350,
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--border-primary)',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
+          )}
 
           {/* MCQ / True-False */}
           {(question.type === 'MCQ' || question.type === 'TRUE_FALSE') && question.options && (
