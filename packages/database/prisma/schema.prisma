@@ -290,6 +290,7 @@ model StudentAttempt {
   startedAt  DateTime      @default(now())
   submittedAt DateTime?
   timeTaken  Int?          // seconds
+  cheatWarnings Int        @default(0)
 
   student User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
   quiz    Quiz            @relation(fields: [quizId], references: [id], onDelete: Cascade)

@@ -160,6 +160,27 @@ export class AttemptsService {
     });
   }
 
+  async logWarning(studentId: string, attemptId: string, type: string) {
+    const attempt = await this.prisma.studentAttempt.findUnique({
+      where: { id: attemptId },
+    });
+
+    if (!attempt) throw new NotFoundException('Attempt not found');
+    if (attempt.studentId !== studentId) throw new ForbiddenException('Not your attempt');
+    if (attempt.status !== 'IN_PROGRESS') return { success: false, reason: 'Already submitted' };
+
+    // @ts-ignore
+    await this.prisma.studentAttempt.update({
+      where: { id: attemptId },
+      data: { 
+        // @ts-ignore
+        cheatWarnings: { increment: 1 } 
+      },
+    });
+
+    return { success: true };
+  }
+
   async getAttemptForTeacher(teacherId: string, attemptId: string) {
     const attempt = await this.prisma.studentAttempt.findUnique({
       where: { id: attemptId },

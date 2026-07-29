@@ -7,6 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import { Clock, ChevronLeft, ChevronRight, Send, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import './TakeQuiz.css';
 
 export default function TakeQuiz() {
   const { id } = useParams();
@@ -37,6 +38,30 @@ export default function TakeQuiz() {
     }, 1000);
     return () => clearInterval(timer);
   }, [timeLeft]);
+
+  // Cheat Detection (Tab Switching)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && !isSubmitting) {
+        toast.error('Warning: Tab switching is not allowed during the quiz!', {
+          duration: 5000,
+          icon: '⚠️',
+        });
+        // Optional: you could add an API call here to log the cheat attempt
+        if (attempt) {
+          // Fire-and-forget log to backend (if backend supports it)
+          api.post(`/attempts/${attempt.id}/log-warning`, { type: 'TAB_SWITCH' }).catch(() => {});
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Cleanup
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [attempt, isSubmitting]);
 
   const startQuiz = async () => {
     try {
@@ -107,15 +132,15 @@ export default function TakeQuiz() {
   const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <div className="animate-fadeIn" style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div className="animate-fadeIn take-quiz-container">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)', padding: 'var(--space-4)', background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
+      <div className="take-quiz-header">
         <div>
           <h2 style={{ fontSize: 'var(--font-size-lg)' }}>{quiz.title}</h2>
           <p className="text-sm text-muted">{questions.length} questions • {quiz.totalMarks} marks</p>
         </div>
         {timeLeft !== null && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', padding: 'var(--space-2) var(--space-4)', background: timeLeft < 300 ? 'var(--color-danger-bg)' : 'var(--bg-glass)', borderRadius: 'var(--radius-lg)', color: timeLeft < 300 ? 'var(--color-danger)' : 'var(--text-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+          <div className={`quiz-timer ${timeLeft < 300 ? 'danger' : ''}`}>
             <Clock size={18} />
             {formatTime(timeLeft)}
           </div>
@@ -157,18 +182,7 @@ export default function TakeQuiz() {
               {question.options.map((opt: any) => (
                 <button
                   key={opt.id}
-                  className={`card-glass hover-scale ${answers[question.id] === opt.id ? 'selected-option' : ''}`}
-                  style={{
-                    padding: 'var(--space-4)',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    border: answers[question.id] === opt.id ? '2px solid var(--color-primary)' : '1px solid var(--border-primary)',
-                    background: answers[question.id] === opt.id ? 'rgba(108, 99, 255, 0.1)' : 'var(--bg-glass)',
-                    borderRadius: 'var(--radius-lg)',
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--text-primary)',
-                    transition: 'all 0.2s ease',
-                  }}
+                  className={`card-glass hover-scale quiz-option ${answers[question.id] === opt.id ? 'selected' : ''}`}
                   onClick={() => setAnswer(question.id, opt.id)}
                 >
                   {opt.text}
@@ -180,11 +194,10 @@ export default function TakeQuiz() {
           {/* Fill Blank */}
           {question.type === 'FILL_BLANK' && (
             <input
-              className="input"
+              className="input quiz-input"
               placeholder="Type your answer..."
               value={answers[question.id] || ''}
               onChange={(e) => setAnswer(question.id, e.target.value)}
-              style={{ fontSize: 'var(--font-size-lg)', padding: 'var(--space-4)' }}
             />
           )}
 
@@ -193,22 +206,20 @@ export default function TakeQuiz() {
             <input
               type="number"
               step="any"
-              className="input"
+              className="input quiz-input"
               placeholder="Enter your numerical answer..."
               value={answers[question.id] || ''}
               onChange={(e) => setAnswer(question.id, e.target.value)}
-              style={{ fontSize: 'var(--font-size-lg)', padding: 'var(--space-4)' }}
             />
           )}
 
           {/* Descriptive */}
           {question.type === 'DESCRIPTIVE' && (
             <textarea
-              className="input textarea"
+              className="input textarea quiz-textarea"
               placeholder="Write your answer..."
               value={answers[question.id] || ''}
               onChange={(e) => setAnswer(question.id, e.target.value)}
-              style={{ minHeight: 200, fontSize: 'var(--font-size-base)', lineHeight: 'var(--line-height-relaxed)' }}
             />
           )}
 
@@ -220,39 +231,40 @@ export default function TakeQuiz() {
       )}
 
       {/* Navigation */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <button className="btn btn-secondary" disabled={currentQ === 0} onClick={() => setCurrentQ((p) => p - 1)}>
-          <ChevronLeft size={16} /> Previous
+      <div className="quiz-navigation">
+        <button className="btn btn-secondary nav-btn" disabled={currentQ === 0} onClick={() => setCurrentQ((p) => p - 1)}>
+          <ChevronLeft size={16} /> <span className="nav-text">Previous</span>
         </button>
 
         {/* Question dots */}
-        <div style={{ display: 'flex', gap: 'var(--space-1)', flexWrap: 'wrap', justifyContent: 'center', maxWidth: 400 }}>
-          {questions.map((_: any, i: number) => (
-            <button
-              key={i}
-              onClick={() => setCurrentQ(i)}
-              style={{
-                width: 28, height: 28, borderRadius: 'var(--radius-md)',
-                border: 'none', cursor: 'pointer', fontSize: 'var(--font-size-xs)',
-                fontWeight: 600,
-                background: i === currentQ ? 'var(--color-primary)' : answers[questions[i].id] ? 'var(--color-success)' : 'var(--bg-glass)',
-                color: i === currentQ || answers[questions[i].id] ? 'white' : 'var(--text-tertiary)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {i + 1}
-            </button>
-          ))}
+        <div className="question-dots-container">
+          {questions.map((_: any, i: number) => {
+            const isAnswered = !!answers[questions[i].id];
+            const isCurrent = i === currentQ;
+            let dotClass = 'question-dot';
+            if (isCurrent) dotClass += ' current';
+            else if (isAnswered) dotClass += ' answered';
+
+            return (
+              <button
+                key={i}
+                onClick={() => setCurrentQ(i)}
+                className={dotClass}
+              >
+                {i + 1}
+              </button>
+            );
+          })}
         </div>
 
         {currentQ < questions.length - 1 ? (
-          <button className="btn btn-primary" onClick={() => setCurrentQ((p) => p + 1)}>
-            Next <ChevronRight size={16} />
+          <button className="btn btn-primary nav-btn" onClick={() => setCurrentQ((p) => p + 1)}>
+            <span className="nav-text">Next</span> <ChevronRight size={16} />
           </button>
         ) : (
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={isSubmitting}>
+          <button className="btn btn-primary nav-btn" onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? <div className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> : (
-              <><Send size={16} /> Submit Quiz</>
+              <><Send size={16} /> <span className="nav-text">Submit Quiz</span></>
             )}
           </button>
         )}

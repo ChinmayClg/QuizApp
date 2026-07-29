@@ -54,13 +54,14 @@ export default function QuizDetail() {
 
   const downloadCSV = () => {
     if (!submissions || submissions.length === 0) return;
-    const headers = ['Student Name', 'Email', 'Score', 'Total Marks', 'Status', 'Submitted At'];
+    const headers = ['Student Name', 'Email', 'Score', 'Total Marks', 'Status', 'Cheat Warnings', 'Submitted At'];
     const rows = submissions.map((s: any) => [
       `"${s.student.name}"`,
       `"${s.student.email}"`,
       s.score || 0,
       s.totalMarks,
       `"${s.status}"`,
+      s.cheatWarnings || 0,
       `"${s.submittedAt ? new Date(s.submittedAt).toLocaleString() : '-'}"`
     ]);
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -226,6 +227,7 @@ export default function QuizDetail() {
                     <th>Student</th>
                     <th>Score</th>
                     <th>Status</th>
+                    <th>Cheat Warnings</th>
                     <th>Submitted</th>
                   </tr>
                 </thead>
@@ -249,6 +251,13 @@ export default function QuizDetail() {
                       </td>
                       <td>
                         <span className={`badge badge-${s.status === 'GRADED' ? 'success' : 'warning'}`}>{s.status}</span>
+                      </td>
+                      <td>
+                        {s.cheatWarnings > 0 ? (
+                          <span style={{ color: 'var(--color-danger)', fontWeight: 'bold' }}>{s.cheatWarnings} ⚠️</span>
+                        ) : (
+                          <span className="text-muted">0</span>
+                        )}
                       </td>
                       <td>{s.submittedAt ? new Date(s.submittedAt).toLocaleString() : '-'}</td>
                       <td>

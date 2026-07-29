@@ -80,6 +80,18 @@ export class AttemptsController {
     return { success: true, data: result };
   }
 
+  @Post(':attemptId/log-warning')
+  @Roles(Role.STUDENT)
+  @ApiOperation({ summary: 'Log a cheat warning (e.g., tab switch)' })
+  async logWarning(
+    @Param('attemptId') attemptId: string,
+    @Body() body: { type: string },
+    @Request() req: any,
+  ) {
+    const result = await this.attemptsService.logWarning(req.user.userId, attemptId, body.type);
+    return { success: true, data: result };
+  }
+
   @Get(':attemptId/result')
   @Roles(Role.STUDENT)
   @ApiOperation({ summary: 'Get attempt result' })
