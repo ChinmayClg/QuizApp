@@ -314,7 +314,7 @@ Provide a 3-4 sentence summary highlighting:
 
   // ========== GENERATE QUESTIONS FROM TEXT ==========
 
-  async generateQuestionsFromText(text: string, extractStrictly: boolean): Promise<any[]> {
+  async generateQuestionsFromText(text: string, extractStrictly: boolean, count?: number): Promise<any[]> {
     if (!this.model) {
       return this.mockGenerateQuestions({ topic: 'Document Parsing Mock', count: 3, types: ['MCQ', 'TRUE_FALSE'] });
     }
@@ -332,7 +332,7 @@ ${cleanedText}
 """`;
 
       const inventPrompt = `You are an expert educational AI. I am providing you with reading material, notes, or a syllabus.
-Your job is to thoroughly read this material and INVENT high-quality quiz questions that test the user's understanding of the key concepts found within the text.
+Your job is to thoroughly read this material and INVENT ${count ? `${count} high-quality` : 'high-quality'} quiz questions that test the user's understanding of the key concepts found within the text.
 
 Text to parse:
 """
@@ -395,7 +395,7 @@ For each question, output this exact JSON structure in a JSON array. Return ONLY
 
   // ========== GENERATE QUESTIONS FROM NATIVE PDF (GEMINI VISION) ==========
 
-  async generateQuestionsFromNativePDF(file: Express.Multer.File, extractStrictly: boolean): Promise<any[]> {
+  async generateQuestionsFromNativePDF(file: Express.Multer.File, extractStrictly: boolean, count?: number): Promise<any[]> {
     if (!this.model) {
       return this.mockGenerateQuestions({ topic: 'Native PDF Mock', count: 3, types: ['MCQ', 'TRUE_FALSE'] });
     }
@@ -405,7 +405,7 @@ For each question, output this exact JSON structure in a JSON array. Return ONLY
 Your job is to read this document, identify all the questions, their options, and the correct answers (if present), and structure them into our specific JSON format. Do NOT invent new questions.`;
 
       const inventPrompt = `You are an expert educational AI. I am providing you with a PDF reading material, notes, or a syllabus.
-Your job is to thoroughly read this material and INVENT high-quality quiz questions that test the user's understanding of the key concepts found within the text.`;
+Your job is to thoroughly read this material and INVENT ${count ? `${count} high-quality` : 'high-quality'} quiz questions that test the user's understanding of the key concepts found within the text.`;
 
       const prompt = `
 ${extractStrictly ? strictPrompt : inventPrompt}

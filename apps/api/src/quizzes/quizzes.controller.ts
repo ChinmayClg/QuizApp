@@ -4,7 +4,7 @@
 
 import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsBoolean, IsInt, IsDateString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsBoolean, IsInt, IsDateString, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Role, QuizMode } from '@quizai/database';
 import { QuizzesService } from './quizzes.service';
@@ -25,6 +25,8 @@ class CreateQuizDto {
   @IsOptional() @IsBoolean() showResults?: boolean;
   @IsOptional() @IsBoolean() showAnswers?: boolean;
   @IsOptional() @Type(() => Number) @IsInt() maxAttempts?: number;
+  @IsOptional() @IsBoolean() hasNegativeMarking?: boolean;
+  @IsOptional() @Type(() => Number) @IsNumber() negativeMarksValue?: number;
 }
 
 class UpdateQuizDto {
@@ -40,6 +42,8 @@ class UpdateQuizDto {
   @IsOptional() @IsBoolean() showResults?: boolean;
   @IsOptional() @IsBoolean() showAnswers?: boolean;
   @IsOptional() @Type(() => Number) @IsInt() maxAttempts?: number;
+  @IsOptional() @IsBoolean() hasNegativeMarking?: boolean;
+  @IsOptional() @Type(() => Number) @IsNumber() negativeMarksValue?: number;
 }
 
 @ApiTags('Quizzes')

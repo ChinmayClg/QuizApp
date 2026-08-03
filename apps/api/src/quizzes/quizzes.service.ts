@@ -25,6 +25,8 @@ export class QuizzesService {
     showResults?: boolean;
     showAnswers?: boolean;
     maxAttempts?: number;
+    hasNegativeMarking?: boolean;
+    negativeMarksValue?: number;
   }) {
     // Verify teacher owns the class
     const classItem = await this.prisma.class.findUnique({ where: { id: data.classId } });
@@ -154,6 +156,8 @@ export class QuizzesService {
     showResults: boolean;
     showAnswers: boolean;
     maxAttempts: number;
+    hasNegativeMarking: boolean;
+    negativeMarksValue: number;
   }>) {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id },

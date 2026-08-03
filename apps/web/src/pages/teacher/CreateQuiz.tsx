@@ -65,6 +65,8 @@ export default function CreateQuiz() {
     showResults: true,
     showAnswers: false,
     maxAttempts: 1,
+    hasNegativeMarking: false,
+    negativeMarksValue: 0.25,
   });
 
   // Questions
@@ -74,6 +76,7 @@ export default function CreateQuiz() {
   // AI Extraction State
   const [isUploading, setIsUploading] = useState(false);
   const [extractStrictly, setExtractStrictly] = useState(false);
+  const [uploadCount, setUploadCount] = useState(5);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -83,6 +86,9 @@ export default function CreateQuiz() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('extractStrictly', String(extractStrictly));
+    if (!extractStrictly) {
+      formData.append('count', String(uploadCount));
+    }
 
     try {
       const res = await api.post<any>('/ai/parse-document', formData);
@@ -391,6 +397,18 @@ export default function CreateQuiz() {
             </label>
           </div>
 
+          <div className="form-row">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <input type="checkbox" checked={quizData.hasNegativeMarking} onChange={(e) => setQuizData((prev) => ({ ...prev, hasNegativeMarking: e.target.checked }))} />
+              Enable Negative Marking
+            </label>
+            {quizData.hasNegativeMarking && (
+              <div className="form-group" style={{ margin: 0 }}>
+                <input type="number" step="0.01" className="input" placeholder="e.g. 0.25" value={quizData.negativeMarksValue} onChange={(e) => setQuizData((prev) => ({ ...prev, negativeMarksValue: Number(e.target.value) }))} style={{ padding: '4px 8px', width: '100px' }} title="Marks deducted for wrong answer" />
+              </div>
+            )}
+          </div>
+
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--space-6)' }}>
             <button className="btn btn-primary" onClick={() => {
               if (!quizData.classId || !quizData.title) {
@@ -430,6 +448,12 @@ export default function CreateQuiz() {
                 <input type="checkbox" checked={extractStrictly} onChange={(e) => setExtractStrictly(e.target.checked)} />
                 Format existing quiz
               </label>
+              {!extractStrictly && (
+                <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
+                  <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Number of Questions</label>
+                  <input type="number" className="input" value={uploadCount} onChange={(e) => setUploadCount(Number(e.target.value))} min={1} max={50} style={{ padding: '6px 8px', width: '100%', fontSize: 'var(--font-size-sm)' }} />
+                </div>
+              )}
               
               <label className="btn btn-secondary btn-sm w-full" style={{ cursor: isUploading ? 'not-allowed' : 'pointer', justifyContent: 'center' }}>
                 {isUploading ? (

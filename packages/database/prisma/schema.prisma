@@ -141,6 +141,8 @@ model Quiz {
   showResults      Boolean    @default(true)
   showAnswers      Boolean    @default(false)
   maxAttempts      Int        @default(1)
+  hasNegativeMarking Boolean  @default(false)
+  negativeMarksValue Float?   @default(0)
   roomCode         String?    @unique // LIVE mode
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt

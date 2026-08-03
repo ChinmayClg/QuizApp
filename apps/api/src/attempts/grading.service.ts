@@ -175,18 +175,29 @@ export class GradingService {
     for (const answer of attempt.answers) {
       const result = await this.gradeAnswer(answer.questionId, answer.answer);
 
+      let finalAnswerScore = result.score;
+      if (
+        !result.isCorrect &&
+        attempt.quiz.hasNegativeMarking &&
+        attempt.quiz.negativeMarksValue &&
+        answer.answer &&
+        answer.answer.trim() !== ''
+      ) {
+        finalAnswerScore -= attempt.quiz.negativeMarksValue;
+      }
+
       await this.prisma.studentAnswer.update({
         where: { id: answer.id },
         data: {
           isCorrect: result.isCorrect,
           aiScore: result.score,
-          finalScore: result.score,
+          finalScore: finalAnswerScore,
           aiReasoning: result.reasoning,
           gradedAt: new Date(),
         },
       });
 
-      totalScore += result.score;
+      totalScore += finalAnswerScore;
     }
 
     // Update attempt

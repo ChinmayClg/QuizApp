@@ -87,13 +87,14 @@ export class AiController {
     console.log(`[UPLOAD DEBUG] Hex of first 10 bytes:`, file.buffer?.toString('hex', 0, 10));
 
     const extractStrictly = dto.extractStrictly === 'true' || dto.extractStrictly === true;
+    const count = dto.count ? parseInt(dto.count, 10) : undefined;
     
     try {
       // 1. Extract raw text from document buffer
       const text = await this.aiService.extractTextFromFile(file);
       
       // 2. Generate questions from extracted text
-      const questions = await this.aiService.generateQuestionsFromText(text, extractStrictly);
+      const questions = await this.aiService.generateQuestionsFromText(text, extractStrictly, count);
       
       return { success: true, data: questions };
     } catch (err: any) {
@@ -102,7 +103,7 @@ export class AiController {
       // If local extraction fails, and it's a PDF, fall back to native Gemini parsing!
       if (file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf')) {
         try {
-          const questions = await this.aiService.generateQuestionsFromNativePDF(file, extractStrictly);
+          const questions = await this.aiService.generateQuestionsFromNativePDF(file, extractStrictly, count);
           return { success: true, data: questions };
         } catch (nativeErr: any) {
           throw new BadRequestException(nativeErr.message || 'Failed to process document natively');
