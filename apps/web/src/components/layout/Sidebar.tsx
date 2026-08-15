@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import './Sidebar.css';
 
-const navItems = {
+const navItems: Record<string, Array<{ to: string, icon: any, label: string, end?: boolean }>> = {
   ADMIN: [
     { to: '/admin/users', icon: Users, label: 'Manage Users' },
   ],
