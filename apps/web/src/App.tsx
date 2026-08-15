@@ -6,7 +6,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import DashboardLayout from './components/layout/DashboardLayout';
 import LoginPage from './pages/auth/LoginPage';
-import AdminDashboard from './pages/admin/AdminDashboard';
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import StudentDashboard from './pages/student/StudentDashboard';
 import StudentClasses from './pages/student/StudentClasses';
@@ -66,7 +65,7 @@ export default function App() {
 
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']}><DashboardLayout /></ProtectedRoute>}>
-        <Route index element={<AdminDashboard />} />
+        <Route index element={<Navigate to="users" replace />} />
         <Route path="users" element={<ManageUsers />} />
       </Route>
 

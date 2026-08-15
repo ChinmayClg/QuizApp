@@ -13,7 +13,6 @@ import './Sidebar.css';
 
 const navItems = {
   ADMIN: [
-    { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
     { to: '/admin/users', icon: Users, label: 'Manage Users' },
   ],
   TEACHER: [
