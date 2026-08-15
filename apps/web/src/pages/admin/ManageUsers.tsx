@@ -7,7 +7,6 @@ import api from '../../lib/api';
 import { Users, Search, Shield, UserX, UserCheck, Plus, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
-import toast from 'react-hot-toast';
 
 export default function ManageUsers() {
   const [users, setUsers] = useState<any[]>([]);
