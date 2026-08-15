@@ -19,6 +19,15 @@ class UserQueryDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) limit?: number;
 }
 
+class CreateUserDto {
+  @IsString() name: string;
+  @IsString() email: string;
+  @IsEnum(Role) role: Role;
+  @IsOptional() @IsString() password?: string;
+  @IsOptional() @IsString() enrollmentNumber?: string;
+  @IsOptional() @IsString() employeeId?: string;
+}
+
 class UpdateUserDto {
   @IsOptional() @IsString() name?: string;
   @IsOptional() @IsString() department?: string;
@@ -55,6 +64,25 @@ export class UsersController {
   async findById(@Param('id') id: string) {
     const user = await this.usersService.findById(id);
     return { success: true, data: user };
+  }
+
+  @Post()
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Register a single user (Admin only)' })
+  async createUser(@Body() dto: CreateUserDto) {
+    const user = await this.usersService.createUser(dto);
+    return { success: true, data: user };
+  }
+
+  @Post('bulk')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Bulk register users (Admin only)' })
+  async createBulkUsers(@Body() dto: { users: CreateUserDto[] }) {
+    if (!dto.users || !Array.isArray(dto.users)) {
+      return { success: false, error: 'Invalid payload. Expected { users: [...] }' };
+    }
+    const result = await this.usersService.createBulkUsers(dto.users);
+    return { success: true, data: result };
   }
 
   @Put(':id')

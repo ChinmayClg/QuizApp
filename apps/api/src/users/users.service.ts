@@ -5,6 +5,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Role } from '@quizai/database';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
@@ -150,5 +151,65 @@ export class UsersService {
 
     await this.prisma.user.delete({ where: { id } });
     return { message: 'User deleted successfully' };
+  }
+
+  async createUser(data: {
+    name: string;
+    email: string;
+    role: Role;
+    password?: string;
+    enrollmentNumber?: string;
+    employeeId?: string;
+  }) {
+    const existingUser = await this.prisma.user.findUnique({ where: { email: data.email } });
+    if (existingUser) {
+      throw new ForbiddenException(`User with email ${data.email} already exists`);
+    }
+
+    const passwordHash = await bcrypt.hash(data.password || 'Welcome@123', 12);
+
+    return this.prisma.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        passwordHash,
+        enrollmentNumber: data.enrollmentNumber,
+        employeeId: data.employeeId,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+      }
+    });
+  }
+
+  async createBulkUsers(users: {
+    name: string;
+    email: string;
+    role: Role;
+    password?: string;
+    enrollmentNumber?: string;
+    employeeId?: string;
+  }[]) {
+    const results = {
+      successful: 0,
+      failed: 0,
+      errors: [] as string[],
+    };
+
+    for (const user of users) {
+      try {
+        await this.createUser(user);
+        results.successful++;
+      } catch (e: any) {
+        results.failed++;
+        results.errors.push(`Failed for ${user.email}: ${e.message}`);
+      }
+    }
+
+    return results;
   }
 }
