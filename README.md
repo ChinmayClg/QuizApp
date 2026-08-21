@@ -1,5 +1,7 @@
 # QuizAI - Smart Assessment Platform
 
+**🚀 Live Demo:** [https://quiz-app-web.vercel.app/](https://quiz-app-web.vercel.app/)
+
 QuizAI is a modern, AI-powered assessment platform designed for educators and students. It streamlines the process of creating, taking, and evaluating quizzes with advanced features like AI question generation, descriptive grading, and detailed analytics.
 
 ## ✨ Features
@@ -12,6 +14,7 @@ QuizAI is a modern, AI-powered assessment platform designed for educators and st
     *   **Class & Student Management:** Create classrooms and track student performance with comprehensive analytics.
 
 *   **For Students:**
+    *   **Mobile-Friendly:** Seamlessly take quizzes on the go from any smartphone or tablet.
     *   **Interactive Quizzes:** Take quizzes with a seamless, responsive UI.
     *   **AI Explanations:** Get detailed AI-generated explanations on why an answer was wrong.
     *   **Dashboard & Analytics:** Track performance history, scores, and active class enrollments.
